@@ -1,0 +1,229 @@
+{
+  "lists": [
+    {
+      "id": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+      "title": "Backlog",
+      "cards": [
+        {
+          "id": "dcdec940-f5fc-40ac-9dda-62c3ad545e48",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Ai agent that auto applies jobs for you",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": [
+            {
+              "id": "64f799b8-2d57-4a91-8649-3da80d4cb39e",
+              "comment": "Ability to infer if you know which do you qualify for.\n\n"
+            },
+            {
+              "id": "392c6d50-d5e4-4e5e-8d8d-0b21f0fe074d",
+              "comment": "Create watchlist for companies. and if creates"
+            }
+          ]
+        },
+        {
+          "id": "434f269f-3a43-4d26-b0cb-5618b7c61289",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "AI system that automatically helps you connecting with people and creating meetings.",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "7576c8fc-5cf4-41d0-8154-0dead1565b13",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Professional Trainning Paths",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "18e0bc30-10ee-482e-a51e-93e98a6642e7",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Professional Meetings for Networking Events",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "18e7baf9-88f7-4f04-a61a-806b5d2c930e",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Founders Features",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "3e84757a-5d41-4166-91e1-9ace1bf1ce6a",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Corporate Features",
+          "description": "Have it for entry and attendance for employees. registering and attending in person events also attendance\n\n\n",
+          "labels": [],
+          "checkboxes": [
+            {
+              "id": "9ca1dc63-b9ed-40a2-a46c-09ffd1525efe",
+              "title": "Corporate internal social communication",
+              "checked": false
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "6378d2f0-279c-467c-856c-cb01ee1d8eaa",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Sync with erpnext employeetrackingsystem check in check out",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "3a11a7cc-6e5f-4f05-bdd4-32b736503e43",
+          "listId": "f8303ebf-8869-464c-85f8-65f0bd38645f",
+          "title": "Services sync with erpnext, travel tourism",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+      "title": "Todo",
+      "cards": [
+        {
+          "id": "3bbd6c3a-a7dd-46da-9203-aec707f71478",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Better Meeting UI - analize and collect competitors cards",
+          "description": "https://blinq.me/",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "0bea6add-824a-4962-a577-fc05f2f660b1",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "NFC Card Opens this client side version",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "56131c42-1290-4150-8f50-dfa519a70a8f",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Check out more Academia Like Profiles",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "3f58f2f1-4f4f-43fe-ab2a-f58c4ce52229",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Ability to chat",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "59f9995a-7702-4114-80a4-c3bef5cf2f29",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Ability to send portfolio",
+          "description": "The porfolios should look good. ",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "14ebd9e2-a0f9-4385-8d2e-02b624ce01b2",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Meetings Calendar",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "39604b3e-1bf1-4edf-ba65-a10f313eac8f",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Being able to upload your resume",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "21710329-a567-4f1c-b1d3-62b5757c40f6",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "Scan code app,",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "c801e3d2-ce57-4176-af01-c7c11b2c46fb",
+          "listId": "4c42832f-9d6a-4d6b-a5bf-31dd3c34cd92",
+          "title": "A landing site",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "b6d40e85-0cf5-428c-9cb9-39446230a10e",
+      "title": "Doing",
+      "cards": [
+        {
+          "id": "cea38e17-0a18-42c8-91a8-477254a030ff",
+          "listId": "b6d40e85-0cf5-428c-9cb9-39446230a10e",
+          "title": "Setup backend correctly",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "fa5f3a33-07cb-4b20-aef0-f04e303049de",
+          "listId": "b6d40e85-0cf5-428c-9cb9-39446230a10e",
+          "title": "Designing Networking Follow UP System",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "49820b1c-1735-467a-8dd5-26bbd21f5bdf",
+          "listId": "b6d40e85-0cf5-428c-9cb9-39446230a10e",
+          "title": "Create using a context repository pattern for the backend to be able to manage the resumes from different (for now use fake one with local jsons to store them",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "6e2a173d-35d0-4937-8116-03146edfb222",
+      "title": "Done",
+      "cards": []
+    }
+  ],
+  "archive": {
+    "lists": [],
+    "cards": []
+  },
+  "settings": {
+    "labels": []
+  }
+}

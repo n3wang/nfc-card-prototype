@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:6001": "next dev -p 6001",
+    "stop:6001": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$connections = Get-NetTCPConnection -LocalPort 6001 -State Listen -ErrorAction SilentlyContinue; if ($connections) { $ownerIds = $connections | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($ownerId in $ownerIds) { Stop-Process -Id $ownerId -Force -ErrorAction SilentlyContinue } }\"",
+    "dev:restart:6001": "npm run stop:6001 && npm run dev:6001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

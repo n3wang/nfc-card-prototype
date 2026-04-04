@@ -14,28 +14,17 @@ This Linktree clone is a personal hub application that allows users to create pr
 
 ---
 
-## Technology Stack Recommendations
-
-### Backend Framework Options
-1. **Node.js + Express** (JavaScript/TypeScript)
-2. **Python + FastAPI** (Python)
-3. **Ruby on Rails** (Ruby)
-4. **ASP.NET Core** (C#)
-
-### Database Options
-1. **PostgreSQL** (Recommended for complex relationships)
-2. **MongoDB** (Good for flexible document storage)
-3. **MySQL** (Traditional relational database)
-
-### Calendar Integration
-- **Google Calendar API**
-- **Microsoft Graph API (Outlook)**
-- **CalDAV Protocol**
-- **Custom calendar solution**
-
----
-
 ## Database Schema
+
+This version reduces table count and keeps most user-managed content in one flexible structure.
+
+### Design Goals
+- Keep core identity and auth strict (`users`, `user_profiles`).
+- Store resume, portfolio, skills, and custom entries in one generic table.
+- Avoid over-modeling early; use categories and simple fields first.
+- Keep scheduling simple by removing `meeting_types` and using enum + duration in bookings.
+- Use slug-based ownership (`user_slug`) for readability and simpler API mapping.
+- Let one user own multiple public profiles, each identified by its own `profile_slug`.
 
 ### Users Table
 ```sql
@@ -60,16 +49,18 @@ CREATE TABLE users (
 ```sql
 CREATE TABLE user_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_slug VARCHAR(50) NOT NULL REFERENCES users(username) ON DELETE CASCADE,
     display_name VARCHAR(100) NOT NULL,
     title VARCHAR(200),
-    location VARCHAR(100),
-    phone VARCHAR(20),
-    website VARCHAR(200),
-    linkedin_url VARCHAR(200),
-    github_url VARCHAR(200),
-    twitter_url VARCHAR(200),
-    custom_domain VARCHAR(100) UNIQUE,
+    details JSONB DEFAULT '[]'::jsonb,
+    -- Array of generic profile details.
+    -- If `link` is null, the entry is plain text rather than a clickable URL.
+    -- Example:
+    -- [
+    --   {"header":"links", "value":"https://github.com/johndoe", "link":"https://github.com/johndoe"},
+    --   {"header":"contact", "value":"+1 555 123 4567", "link":null},
+    --   {"header":"location", "value":"San Francisco, CA", "link":null}
+    -- ]
     is_public BOOLEAN DEFAULT true,
     profile_slug VARCHAR(50) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -77,84 +68,24 @@ CREATE TABLE user_profiles (
 );
 ```
 
-### Work Experience Table
+### Profile Items Table (Generic Content)
 ```sql
-CREATE TABLE work_experiences (
+CREATE TABLE profile_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    company_name VARCHAR(200) NOT NULL,
-    position VARCHAR(200) NOT NULL,
-    location VARCHAR(100),
-    start_date DATE NOT NULL,
-    end_date DATE,
-    is_current BOOLEAN DEFAULT false,
-    description TEXT,
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Education Table
-```sql
-CREATE TABLE education (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    institution_name VARCHAR(200) NOT NULL,
-    degree VARCHAR(200) NOT NULL,
-    field_of_study VARCHAR(200),
-    start_date DATE NOT NULL,
-    end_date DATE,
-    gpa DECIMAL(3,2),
-    description TEXT,
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Skills Table
-```sql
-CREATE TABLE skills (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    category VARCHAR(50), -- e.g., 'programming', 'design', 'languages'
-    proficiency_level INTEGER CHECK (proficiency_level >= 1 AND proficiency_level <= 5),
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Portfolio Projects Table
-```sql
-CREATE TABLE portfolio_projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_slug VARCHAR(50) NOT NULL REFERENCES user_profiles(profile_slug) ON DELETE CASCADE,
+    category VARCHAR(40) NOT NULL,
+    -- Suggested values:
+    -- 'experience', 'education', 'skill', 'project', 'link', 'award', 'certification', 'other'
     title VARCHAR(200) NOT NULL,
-    description TEXT NOT NULL,
-    image_url VARCHAR(500),
-    live_url VARCHAR(500),
-    github_url VARCHAR(500),
-    technologies JSON, -- Array of technology names
-    featured BOOLEAN DEFAULT false,
-    status VARCHAR(20) DEFAULT 'published', -- 'draft', 'published', 'archived'
+    subtitle VARCHAR(200),
+    year VARCHAR(30),
+    description TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    -- Optional extensibility for image/link/color/proficiency/etc.
+    -- Example: {"url":"https://...", "image_url":"https://...", "proficiency":4, "featured":true}
+    status VARCHAR(20) DEFAULT 'active', -- 'active', 'draft', 'archived'
     sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Custom Links Table
-```sql
-CREATE TABLE custom_links (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(100) NOT NULL,
-    url VARCHAR(500) NOT NULL,
-    icon VARCHAR(50), -- Icon name or emoji
-    is_active BOOLEAN DEFAULT true,
-    sort_order INTEGER DEFAULT 0,
+    is_public BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -164,7 +95,7 @@ CREATE TABLE custom_links (
 ```sql
 CREATE TABLE calendar_availability (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_slug VARCHAR(50) NOT NULL REFERENCES user_profiles(profile_slug) ON DELETE CASCADE,
     day_of_week INTEGER NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6), -- 0=Sunday
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -174,35 +105,22 @@ CREATE TABLE calendar_availability (
 );
 ```
 
-### Meeting Types Table
-```sql
-CREATE TABLE meeting_types (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    duration INTEGER NOT NULL, -- duration in minutes
-    color VARCHAR(7), -- hex color code
-    is_active BOOLEAN DEFAULT true,
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Meeting Bookings Table
+### Meeting Bookings Table (No Meeting Types Table)
 ```sql
 CREATE TABLE meeting_bookings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    meeting_type_id UUID REFERENCES meeting_types(id) ON DELETE CASCADE,
+    user_slug VARCHAR(50) NOT NULL REFERENCES user_profiles(profile_slug) ON DELETE CASCADE,
+    meeting_kind VARCHAR(20) NOT NULL,
+    -- 'coffee_chat', 'interview', 'demo', 'mentoring', 'custom'
     attendee_name VARCHAR(200) NOT NULL,
     attendee_email VARCHAR(255) NOT NULL,
     scheduled_date DATE NOT NULL,
     scheduled_time TIME NOT NULL,
     timezone VARCHAR(50) NOT NULL,
-    duration INTEGER NOT NULL,
+    duration_minutes INTEGER NOT NULL,
     message TEXT,
+    details JSONB DEFAULT '{}'::jsonb,
+    -- Optional: {"location":"Google Meet", "project_id":"uuid", "notes":"..."}
     status VARCHAR(20) DEFAULT 'scheduled', -- 'scheduled', 'confirmed', 'cancelled', 'completed'
     calendar_event_id VARCHAR(200), -- External calendar system ID
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -272,32 +190,111 @@ Response: 200 OK
 
 ### User Profile Endpoints
 
+#### Create User Profile
+```
+POST /api/profiles
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+    "profile_slug": "john-doe-academia",
+    "display_name": "John Doe",
+    "title": "Research Engineer",
+    "details": [
+        {
+            "header": "links",
+            "value": "https://github.com/johndoe",
+            "link": "https://github.com/johndoe"
+        },
+        {
+            "header": "contact",
+            "value": "+1 555 123 4567",
+            "link": null
+        },
+        {
+            "header": "location",
+            "value": "San Francisco, CA",
+            "link": null
+        }
+    ]
+}
+
+Response: 201 Created
+{
+    "profile": { /* created profile object */ }
+}
+```
+
+#### List User Profiles
+```
+GET /api/users/:username/profiles
+
+Response: 200 OK
+{
+    "profiles": [
+        {
+            "profile_slug": "john-doe-academia",
+            "display_name": "John Doe",
+            "title": "Research Engineer"
+        },
+        {
+            "profile_slug": "john-doe-creative",
+            "display_name": "John Doe",
+            "title": "Creative Technologist"
+        }
+    ]
+}
+```
+
 #### Get User Profile
 ```
-GET /api/users/:username
-or
 GET /api/profiles/:slug
 
 Response: 200 OK
 {
     "profile": {
         "id": "uuid",
+        "profile_slug": "john-doe-academia",
+        "user_slug": "johndoe",
         "display_name": "John Doe",
         "title": "Full Stack Developer",
         "bio": "Building digital experiences...",
         "avatar_url": "https://...",
         "theme_preference": "academia",
-        "social_links": {
-            "linkedin": "https://linkedin.com/in/johndoe",
-            "github": "https://github.com/johndoe",
-            "twitter": "https://twitter.com/johndoe"
-        },
-        "custom_links": [
+        "details": [
+            {
+                "header": "links",
+                "value": "https://linkedin.com/in/johndoe",
+                "link": "https://linkedin.com/in/johndoe"
+            },
+            {
+                "header": "links",
+                "value": "https://johndoe.com",
+                "link": "https://johndoe.com"
+            },
+            {
+                "header": "location",
+                "value": "San Francisco, CA",
+                "link": null
+            },
+            {
+                "header": "contact",
+                "value": "+1 555 123 4567",
+                "link": null
+            }
+        ],
+        "items": [
             {
                 "id": "uuid",
+                "category": "link",
                 "title": "My Blog",
-                "url": "https://blog.johndoe.com",
-                "icon": "📝",
+                "subtitle": "Personal Writing",
+                "year": "",
+                "description": "Long-form articles about engineering.",
+                "metadata": {
+                    "url": "https://blog.johndoe.com",
+                    "icon": "note"
+                },
                 "sort_order": 1
             }
         ]
@@ -307,7 +304,7 @@ Response: 200 OK
 
 #### Update User Profile
 ```
-PUT /api/users/profile
+PUT /api/profiles/:slug
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
@@ -316,8 +313,23 @@ Content-Type: application/json
     "title": "Senior Full Stack Developer",
     "bio": "Updated bio...",
     "theme_preference": "default",
-    "linkedin_url": "https://linkedin.com/in/johndoe",
-    "github_url": "https://github.com/johndoe"
+    "details": [
+        {
+            "header": "links",
+            "value": "https://linkedin.com/in/johndoe",
+            "link": "https://linkedin.com/in/johndoe"
+        },
+        {
+            "header": "links",
+            "value": "https://custom-domain.com",
+            "link": "https://custom-domain.com"
+        },
+        {
+            "header": "contact",
+            "value": "+1 555 123 4567",
+            "link": null
+        }
+    ]
 }
 
 Response: 200 OK
@@ -330,64 +342,71 @@ Response: 200 OK
 
 #### Get User Resume
 ```
-GET /api/users/:username/resume
+GET /api/profiles/:slug/resume
 
 Response: 200 OK
 {
     "resume": {
-        "work_experiences": [
+        "items": [
             {
                 "id": "uuid",
-                "company_name": "TechCorp Inc.",
-                "position": "Senior Developer",
-                "start_date": "2021-01-01",
-                "end_date": null,
-                "is_current": true,
-                "description": "Led development of...",
+                "category": "experience",
+                "title": "TechCorp Inc.",
+                "subtitle": "Senior Developer",
+                "year": "2021-Present",
+                "description": "Led development of internal platform services.",
+                "metadata": {
+                    "location": "San Francisco, CA"
+                },
                 "sort_order": 0
-            }
-        ],
-        "education": [
+            },
             {
                 "id": "uuid",
-                "institution_name": "University of California",
-                "degree": "Bachelor of Science",
-                "field_of_study": "Computer Science",
-                "start_date": "2014-09-01",
-                "end_date": "2018-06-01",
-                "gpa": 3.8
-            }
-        ],
-        "skills": [
+                "category": "education",
+                "title": "University of California",
+                "subtitle": "B.S. Computer Science",
+                "year": "2014-2018",
+                "description": "Graduated with honors.",
+                "metadata": {
+                    "gpa": "3.8"
+                }
+            },
             {
                 "id": "uuid",
-                "name": "JavaScript",
-                "category": "programming",
-                "proficiency_level": 5
+                "category": "skill",
+                "title": "JavaScript",
+                "subtitle": "Programming",
+                "year": "",
+                "description": "Daily production usage.",
+                "metadata": {
+                    "proficiency": 5
+                }
             }
         ]
     }
 }
 ```
 
-#### Add Work Experience
+#### Add Resume Item
 ```
-POST /api/users/resume/experience
+POST /api/users/items
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
-    "company_name": "New Company",
-    "position": "Developer",
-    "location": "San Francisco, CA",
-    "start_date": "2023-01-01",
-    "is_current": true,
-    "description": "Working on exciting projects..."
+    "category": "education",
+    "title": "Stanford University",
+    "subtitle": "M.S. Computer Science",
+    "year": "2024",
+    "description": "Focus on distributed systems.",
+    "metadata": {
+        "gpa": "3.9"
+    }
 }
 
 Response: 201 Created
 {
-    "experience": { /* created experience object */ }
+    "item": { /* created item object */ }
 }
 ```
 
@@ -395,20 +414,24 @@ Response: 201 Created
 
 #### Get User Portfolio
 ```
-GET /api/users/:username/portfolio
+GET /api/profiles/:slug/portfolio
 
 Response: 200 OK
 {
-    "projects": [
+    "items": [
         {
             "id": "uuid",
+            "category": "project",
             "title": "E-Commerce Platform",
-            "description": "Full-stack solution...",
-            "image_url": "https://...",
-            "live_url": "https://demo.example.com",
-            "github_url": "https://github.com/user/project",
-            "technologies": ["React", "Node.js", "PostgreSQL"],
-            "featured": true
+            "subtitle": "Full-stack web app",
+            "year": "2025",
+            "description": "React + Node platform with integrated checkout.",
+            "metadata": {
+                "live_url": "https://demo.example.com",
+                "github_url": "https://github.com/user/project",
+                "technologies": ["React", "Node.js", "PostgreSQL"],
+                "featured": true
+            }
         }
     ]
 }
@@ -416,23 +439,28 @@ Response: 200 OK
 
 #### Create Portfolio Project
 ```
-POST /api/users/portfolio/projects
+POST /api/users/items
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
+    "category": "project",
     "title": "New Project",
+    "subtitle": "Portfolio Showcase",
+    "year": "2026",
     "description": "Project description...",
-    "image_url": "https://...",
-    "live_url": "https://project.com",
-    "github_url": "https://github.com/user/project",
-    "technologies": ["Vue.js", "Python", "MongoDB"],
-    "featured": false
+    "metadata": {
+        "image_url": "https://...",
+        "live_url": "https://project.com",
+        "github_url": "https://github.com/user/project",
+        "technologies": ["Vue.js", "Python", "MongoDB"],
+        "featured": false
+    }
 }
 
 Response: 201 Created
 {
-    "project": { /* created project object */ }
+    "item": { /* created item object */ }
 }
 ```
 
@@ -440,7 +468,7 @@ Response: 201 Created
 
 #### Get User Availability
 ```
-GET /api/users/:username/availability
+GET /api/profiles/:slug/availability
 
 Response: 200 OK
 {
@@ -451,22 +479,13 @@ Response: 200 OK
             "end_time": "17:00:00",
             "timezone": "America/Los_Angeles"
         }
-    ],
-    "meeting_types": [
-        {
-            "id": "uuid",
-            "name": "Coffee Chat",
-            "description": "30 min casual conversation",
-            "duration": 30,
-            "color": "#667eea"
-        }
     ]
 }
 ```
 
 #### Get Available Time Slots
 ```
-GET /api/users/:username/availability/slots?date=2024-01-15&meeting_type_id=uuid
+GET /api/profiles/:slug/availability/slots?date=2024-01-15&duration=30&meeting_kind=coffee_chat
 
 Response: 200 OK
 {
@@ -487,11 +506,12 @@ Response: 200 OK
 
 #### Book Meeting
 ```
-POST /api/users/:username/meetings
+POST /api/profiles/:slug/meetings
 Content-Type: application/json
 
 {
-    "meeting_type_id": "uuid",
+    "meeting_kind": "coffee_chat",
+    "duration_minutes": 30,
     "attendee_name": "Jane Smith",
     "attendee_email": "jane@example.com",
     "scheduled_date": "2024-01-15",
@@ -506,6 +526,7 @@ Response: 201 Created
         "id": "uuid",
         "confirmation_code": "ABC123",
         "meeting_details": {
+            "meeting_kind": "coffee_chat",
             "date": "2024-01-15",
             "time": "09:00:00",
             "duration": 30,
@@ -609,7 +630,7 @@ Content-Type: application/json
 ### JWT Token Structure
 ```json
 {
-  "sub": "user_id",
+    "sub": "user_slug",
   "email": "user@example.com",
   "username": "johndoe",
   "iat": 1640995200,
@@ -637,9 +658,9 @@ CREATE TABLE roles (
 );
 
 CREATE TABLE user_roles (
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_slug VARCHAR(50) REFERENCES users(username) ON DELETE CASCADE,
     role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, role_id)
+    PRIMARY KEY (user_slug, role_id)
 );
 
 -- Default roles: 'user', 'admin', 'premium'
@@ -739,7 +760,7 @@ BACKEND_URL=https://api.yourapp.com
 ### Database Migrations
 Create migration scripts for:
 1. Initial schema creation
-2. Seed data (default meeting types, skills categories)
+2. Seed data (optional item categories enum/check constraint values)
 3. Indexes for performance
 4. Foreign key constraints
 
@@ -748,7 +769,9 @@ Create migration scripts for:
    ```sql
    CREATE INDEX idx_users_username ON users(username);
    CREATE INDEX idx_profiles_slug ON user_profiles(profile_slug);
-   CREATE INDEX idx_bookings_user_date ON meeting_bookings(user_id, scheduled_date);
+    CREATE INDEX idx_items_slug_category ON profile_items(user_slug, category);
+    CREATE INDEX idx_items_slug_sort ON profile_items(user_slug, sort_order);
+    CREATE INDEX idx_bookings_slug_date ON meeting_bookings(user_slug, scheduled_date);
    ```
 
 2. **Caching Strategy**
@@ -771,7 +794,8 @@ Create migration scripts for:
 
 ### Unit Tests
 - Authentication functions
-- Database models
+- User profile details array validation (`header`, `value`, optional `link`)
+- Generic profile item model validation (`title`, `subtitle`, `year`, `description`, `category`)
 - Calendar integration functions
 - Email service functions
 
